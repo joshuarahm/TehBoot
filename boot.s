@@ -1,7 +1,12 @@
+# signal that this is supposed to be
+# 16 bit code.
 .code16
+
+# start the data section
 .section .data
 
 ERRORSTR:
+# Super helpful error message
 .asciz "There was an error"
 
 DAP:
@@ -63,17 +68,27 @@ main:
 	# Invoke the disk read 
 	int $0x13
 
-	hlt /* Wait for the interrupt to come back 
+	hlt # Wait for the disk to finish to come back 
 
+	# set the cursor back to 0
 	xor %dx,%dx
 
+	# Jump if there was no error reading
+	# from the disk
 	jnc ok
 
+	# if eip is here, then there was an error
+	# reading code
 	push $ERRORSTR
 	call print_str
+
+	# we're done here
 	jmp done
 
 ok:
+	# at this point, the disk was successfully
+	# read!
+	
 	# Simply print out what we find.
 	# Later I can jump to it
 	push $0x1000
@@ -83,6 +98,8 @@ done:
 	hlt
 
 
+# Print a string that has been pushed on the stack,
+# this is pretty buggy right now.
 print_str:
 	mov $0x000F,%bx
 	mov $1,%cx
