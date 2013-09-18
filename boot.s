@@ -1,16 +1,8 @@
 .code16
 .section .data
-HELLO:
-.ascii "Welcome to Teh Boot Bootloader!"
-.byte 0x21,0x0a
-.ascii "The most awesome, but equally useless boot loader" 
-.byte 0x21,0x0a
-.ascii "Give it TEH BOOT"
-.byte 0x21,0x21,0x21,0x0a,0x00
 
-READ_BYTES_STR:
-.ascii "I read some bytes"
-.byte 0
+ERRORSTR:
+.asciz "There was an error"
 
 DAP:
 /* This is the struct for accessing crap on the disk.
@@ -24,17 +16,19 @@ DAP:
 /* unused, must be 0 */
 .byte 0x00
 
-/* We are going to read 16 sectors */
-.short 0x10
+/* We are going to read 1 sector */
+.short 0x1
 
 /* Load to the address 0xFF000.
  * Yes, I mean that address, thank you obscure
  * memory segmentation */
-.long 0xFF000000
+.short 0x1000
+.short 0x0000
 
 /* Start at sector 1. Skip the initial
  * boot code which is on sector 0 */
-.quad 0x01
+.long 1
+.long 0
 
 END_DAP:
 
@@ -46,16 +40,16 @@ END_DAP:
 .type main, @function
 
 main:
+	xor %dx,%dx
+
 	/* Push hello. Apparently push only works
 	 * with constants in 16 bit mode */
-	push $HELLO
-	call print_str
+	//push $HELLO
+	//call print_str
 
 	/* Now let's load some data from the
 	 * drive */
 
-	mov $0x42,%ah /* Use the read drive sectors command */
-	mov $0x0,%dl /* We use drive 0 */
 
 	/* set the segment to 0x0000:$DAP
 	 * (DS:SI) */
@@ -63,23 +57,33 @@ main:
 	mov %ax,%ds /* for some reason a move to %ds requires ax */
 	mov $DAP,%si
 
+	mov $0x42,%ah /* Use the read drive sectors command */
+	mov $0x80,%dl /* We use drive 0 */
+
 	/* Invoke the disk read */
 	int $0x13
 
-	add $2,%sp
+	hlt /* Wait for the interrupt to come back */
 
-	hlt
+	xor %dx,%dx
 
-	push $READ_BYTES_STR
+	jnc ok
+
+	push $ERRORSTR
+	call print_str
+	jmp done
+
+ok:
+	push $0x1000
 	call print_str
 
+done:
 	hlt
 
 
 print_str:
 	mov $0x000F,%bx
 	mov $1,%cx
-	xor %dx,%dx
 	mov %dx,%ds
 
 	cld
