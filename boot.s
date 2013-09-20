@@ -5,9 +5,14 @@
 # start the data section
 .section .data
 
+LoadState2Ptr = 0x1000
+
 ERRORSTR:
 # Super helpful error message
 .asciz "There was an error"
+
+PROTECTED_STR:
+.asciz "Processor In Protected Mode"
 
 DAP:
 # This is the struct for accessing crap on the disk.
@@ -27,7 +32,7 @@ DAP:
 # Load to the address 0xFF000.
 # Yes, I mean that address, thank you obscure
 # memory segmentation 
-.short 0x1000
+.short LoadState2Ptr
 .short 0x0000
 
 # Start at sector 1. Skip the initial
@@ -36,6 +41,30 @@ DAP:
 .long 0
 
 END_DAP:
+
+GDT:
+	# Data segment for GDT iteself
+	.short GDT_End - GDT - 1
+	.short GDT
+	.byte 0
+	.byte 0, 0
+	.byte 0
+
+	# Data segment for 20k section GB section
+	.short 0x0005 # Segment length bits 0-15, 5-4k blocks
+	# Starting at location 0
+	.short 0x0000 # Segment address bits 0-15
+	# Still at 0
+	.byte 0x00 # segment address bits 16-23
+	.byte 0b10011010 # Access byte # Present = 1
+	                               # Privledge = 0
+								   # Executable = 1
+								   # DC = 0
+								   # RW = 1
+								   # Ac = 0
+	.byte 0b11000000 # flags size=4k blocks, 32-bit protected mode, rest of limit
+	.byte 0x00 # final bits for address
+GDT_End:
 
 .section .text
 
@@ -93,10 +122,44 @@ ok:
 	# Later I can jump to it
 	push $0x1000
 	call print_str
-
+	call enter_protected
 done:
 	hlt
 
+enter_protected:
+	mov $3,%ax
+	int $0x10
+	xor %edx,%edx
+	mov %dx,%ds
+	shl $4,%edx
+	add	%edx,(GDT+2)
+	lgdt (GDT)
+	mov %cr0,%eax
+	or  $1,%al
+	cli
+	mov %eax,%cr0
+	mov $0x08,%bx
+	mov %bx,%fs
+	jmp protected_main
+
+protected_main:
+	mov $0xB8000,%ebx
+	mov $PROTECTED_STR,%si
+
+	loop_chars:
+		lodsb
+		cmp $0x00,%al
+		je end_loop_chars
+		mov %al,(%ebx)
+		add $2,%ebx
+		jmp loop_chars
+	
+	end_loop_chars:
+
+	mov $0x5ff00,%esp
+	mov $0x5ff00,%ebp
+
+	ljmp $0x08,$0x1000 # jump to 0x1000 with code segment 0x8
 
 # Print a string that has been pushed on the stack,
 # this is pretty buggy right now.
