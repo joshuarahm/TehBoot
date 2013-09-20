@@ -1,9 +1,6 @@
 Teh Boot
 
-Teh Boot is a simple, open source bootloader that was started as a simple project
-by me to help sharpen by skills as a low-level developer. Currently, all the project
-does is boot in 16-bit mode and jump to some C code where it prints to the VGA buffer.
-It isn't much, but its a start.
+Teh Boot is a simple, open source bootloader that was started as a simple project by me to help sharpen by skills as a low-level developer. Currently, all the project does is boot in 16-bit mod and jump to some C code where it prints to the VGA buffer. It isn't much, but its a start.
 
 Objectives
 ----------
