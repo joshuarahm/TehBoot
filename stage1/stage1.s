@@ -26,8 +26,8 @@ DAP:
 # unused, must be 0 
 .byte 0x00
 
-# We are going to read 1 sector 
-.short 0x1
+# We are going to read 16 sectors
+.short 0x10
 
 # Load to the address 0xFF000.
 # Yes, I mean that address, thank you obscure
@@ -51,7 +51,7 @@ GDT:
 	.byte 0
 
 	# Data segment for 20k section GB section
-	.short 0x0005 # Segment length bits 0-15, 5-4k blocks
+	.short 0xFFFF # Segment length bits 0-15, Full 4 GiB
 	# Starting at location 0
 	.short 0x0000 # Segment address bits 0-15
 	# Still at 0
@@ -156,8 +156,10 @@ protected_main:
 	
 	end_loop_chars:
 
-	mov $0x5ff00,%esp
-	mov $0x5ff00,%ebp
+	# The stack will clobber this code, but we don't need
+	# it anymore
+	mov $0x7e00,%esp
+	mov $0x7e00,%ebp
 
 	ljmp $0x08,$0x1000 # jump to 0x1000 with code segment 0x8
 
