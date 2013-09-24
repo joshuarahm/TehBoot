@@ -2,19 +2,38 @@
  * This is stage 2 of TehBoot
  */
 
-#define VGA_BUFFER_PTR ((short int*)0xB8000)
+#include "vga.h"
 
-const char* message = "Start Stage 2";
+/*
+ * Get the message of the day
+ * to display to the user
+ */
+#include "tehboot_motd.h"
 
-void main() {
-	const char* ptr = message;
-	register int i = 0;
+/*
+ * Main entry point for teh boot.
+ */
+int main() {
+    /* VGA color */
+    vga_color_t color;
 
-	for( i = 0 ; *ptr != 0; ++ i ) {
-		VGA_BUFFER_PTR[i] = 0x0F00 | *ptr; /* Print char with white color */
-		*ptr ++;
-	}
+    /* Clear the vga buffer */
+    vga_clear();
 
-	/* Infaloop */
-	while( 1 ) ;
+    /* Print things in white */
+    vga_sethigher( color = vga_color_light_grey );
+
+    /* Print the message */
+    vga_print( "Start stage 2 ...\n" );
+    vga_print( "Welcome to Teh Boot.\n" );
+    vga_print( "  Starting stage2 complete\n" );
+
+    vga_sethigher( vga_color_white );
+    vga_print( MOTD );
+    vga_move( 24, 0 );
+    vga_print("Press any key to continue . . .");
+
+    while(1) ;
+
+    return 0;
 }

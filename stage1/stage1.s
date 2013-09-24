@@ -26,8 +26,8 @@ DAP:
 # unused, must be 0 
 .byte 0x00
 
-# We are going to read 1 sector 
-.short 0x1
+# We are going to read 16 sectors
+.short 0x10
 
 # Load to the address 0xFF000.
 # Yes, I mean that address, thank you obscure
@@ -120,8 +120,8 @@ ok:
 	
 	# Simply print out what we find.
 	# Later I can jump to it
-	push $0x1000
-	call print_str
+	# push $0x1000
+	# call print_str
 	call enter_protected
 done:
 	hlt
@@ -156,8 +156,11 @@ protected_main:
 	
 	end_loop_chars:
 
-	mov $0x5ff00,%esp
-	mov $0x5ff00,%ebp
+    # clobber the memory where this code
+    # resides, we can no longer get back
+    # to it anyway
+	mov $0x7e00,%esp
+	mov $0x7e00,%ebp
 
 	ljmp $0x08,$0x1000 # jump to 0x1000 with code segment 0x8
 
