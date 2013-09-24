@@ -26,8 +26,8 @@ DAP:
 # unused, must be 0 
 .byte 0x00
 
-# We are going to read 16 sectors
-.short 0x10
+# We are going to read 54 sectors
+.short 0x36
 
 # Load to the address 0xFF000.
 # Yes, I mean that address, thank you obscure

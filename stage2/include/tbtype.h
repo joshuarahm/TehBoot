@@ -27,4 +27,6 @@ typedef float       f32_t;
 
 typedef long long unsigned int largest_int_t;
 
+typedef u8_t privledge_level_t;
+
 #endif
