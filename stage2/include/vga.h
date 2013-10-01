@@ -69,4 +69,9 @@ void vga_printid( sint_t i );
 /* set the higher order bits to use for printing */
 void vga_sethigher( u8_t byte );
 
+/* 
+ * Prints a hex integer
+ */
+void vga_printix( uint_t i ) ;
+
 #endif

@@ -43,15 +43,18 @@ DAP:
 END_DAP:
 
 GDT:
-	# Data segment for GDT iteself
+	# Data segment for GDT iteself - 0x00
 	.short GDT_End - GDT - 1
 	.short GDT
 	.byte 0
 	.byte 0, 0
 	.byte 0
 
-	# Data segment for 20k section GB section
-	.short 0x0005 # Segment length bits 0-15, 5-4k blocks
+    # ############################################### #
+	# This is the CODE section for the Kernel. - 0x08 #
+    # ############################################### #
+
+	.short 0xFFFF # Segment length bits 0-15, 5-4k blocks
 	# Starting at location 0
 	.short 0x0000 # Segment address bits 0-15
 	# Still at 0
@@ -64,13 +67,47 @@ GDT:
 								   # Ac = 0
 	.byte 0b11000000 # flags size=4k blocks, 32-bit protected mode, rest of limit
 	.byte 0x00 # final bits for address
+
+    # ############################################### #
+	# This is the DATA section for the Kernel. - 0x10 #
+    # ############################################### #
+
+	.short 0xFFFF # Segment length bits 0-15, 5-4k blocks
+	# Starting at location 0
+	.short 0x0000 # Segment address bits 0-15
+	# Still at 0
+	.byte 0x00 # segment address bits 16-23
+	.byte 0b10010010 # Access byte # Present = 1
+	                               # Privledge = 0
+								   # Executable = 0
+								   # DC = 0
+								   # RW = 1
+								   # Ac = 0
+	.byte 0b11000000 # flags size=4k blocks, 32-bit protected mode, rest of limit
+	.byte 0x00 # final bits for address
+
+    # ############################################## #
+    # This is the TSS section for the kernel. - 0x18 #
+    # ############################################## #
+
+	.short 0xFFFF # Segment length bits 0-15, 5-4k blocks
+	# Starting at location 0
+	.short 0x0000 # Segment address bits 0-15
+	# Still at 0
+	.byte 0x00 # segment address bits 16-23
+	.byte 0b10001001 # Access byte # Present = 1
+	                               # Privledge = 0
+								   # Executable = 0
+								   # DC = 0
+								   # RW = 1
+								   # Ac = 0
+	.byte 0b11000000 # flags size=4k blocks, 32-bit protected mode, rest of limit
+	.byte 0x00 # final bits for address
 GDT_End:
 
 .section .text
 
-.global print_str
 .global main
-.type print_str, @function
 .type main, @function
 
 main:
@@ -105,11 +142,6 @@ main:
 	# Jump if there was no error reading
 	# from the disk
 	jnc ok
-
-	# if eip is here, then there was an error
-	# reading code
-	push $ERRORSTR
-	call print_str
 
 	# we're done here
 	jmp done
@@ -163,55 +195,3 @@ protected_main:
 	mov $0x7e00,%ebp
 
 	ljmp $0x08,$0x1000 # jump to 0x1000 with code segment 0x8
-
-# Print a string that has been pushed on the stack,
-# this is pretty buggy right now.
-print_str:
-	mov $0x000F,%bx
-	mov $1,%cx
-	mov %dx,%ds
-
-	cld
-
-	# Begin the operation of moving the argument
-	# into %si, by first making %si point to the
-	# bottom of the stack 
-	mov %sp,%si
-
-	# add 2 from %si so it is now pointing to
-	# the argument 
-	add $2,%si
-
-	# Dereference that argument into %si itself 
-	mov (%si),%si
-	
-put_char:
-	mov $2,%ah
-	int $0x10
-	lodsb
-	mov $9,%ah
-# Check for a new line character.
-	cmp $0x0a,%al
-	je new_line
-
-	int $0x10
-
-	inc %dl
-	cmp $80,%dl
-
-	jne try_end
-
-new_line:
-	xor %dl,%dl
-	inc %dh
-
-	cmp $25,%dh
-	jne try_end
-
-	xor %dh,%dh
-
-try_end:
-	mov (%si),%ah
-	cmp $0,%ah
-	jne put_char
-	ret

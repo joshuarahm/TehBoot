@@ -156,6 +156,13 @@ protected_main:
 	
 	end_loop_chars:
 
+    mov $0x10,%ax
+    mov %ax,  %ds
+    mov %ax,  %es
+    mov %ax,  %fs
+    mov %ax,  %gs
+    mov %ax,  %ss
+
 	mov $0x5ff00,%esp
 	mov $0x5ff00,%ebp
 

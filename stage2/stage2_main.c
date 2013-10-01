@@ -16,11 +16,22 @@
  */
 #include "idt.h"
 
+#include "isr.h"
+
 /* The interrupt descriptor table */
 idt_descriptor_t interrupt_table[256];
 
-void call_interrupt( );
- 
+void isr_main( );
+
+void print_idt_descriptor( idt_descriptor_t* desc ) ;
+
+void load_tss( );
+
+/* Enables interrupts */
+#define enable_int( ) __asm__("sti\n")
+
+/* Halts the CPU */
+#define halt( ) __asm__("hlt\n")
 
 /*
  * Main entry point for teh boot.
@@ -37,35 +48,62 @@ int main() {
 
     /* Print the message */
     vga_print( "Start stage 2 ...\n" );
-    vga_print( "Welcome to Teh Boot.\n" );
-    vga_print( "  Starting stage2 complete\n" );
+
+    setup_standard_isr( interrupt_table );
+    /* Load the newly created interrupt descriptor table */
+    load_idt( interrupt_table, 20*sizeof(idt_descriptor_t) );
+
+    vga_print( "Starting stage2 complete.\n" );
+    vga_print( "     Welcome to Teh Boot.\n" );
 
     vga_sethigher( vga_color_white );
     vga_print( MOTD );
     vga_move( 24, 0 );
-    vga_print("Press any key to continue . . .");
+    vga_print("Press any key to continue . . .\n");
 
-    ksize_t i = 0;
-    for( ; i < 256; ++ i ) {
-        idt_set_offset( &interrupt_table[i], call_interrupt );
-        /* Set the segment to the same segment
-         * currently executing */
-        idt_set_segment( &interrupt_table[i], 8 );
-        idt_set_type( &interrupt_table[i], IdtType_TaskGate32 );
-        idt_set_privledge_level( &interrupt_table[i], 0 );
+    ksize_t i;
+    for( i = 0; i < 20; ++ i ) {
+        vga_printid(i);
+        vga_putc( '\t' );
+        print_idt_descriptor( & interrupt_table[i] );
+        vga_print("\n");
     }
 
+    // halt();
 
-    while(1) ;
+    load_tss( );
+    /* enable interrupts. Here be dragons */
+    enable_int();
+    asm( "int $0x03" );
+
+    /* indefinately wait */
+    while(1);
+
 
     return 0;
 }
 
-void call_interrupt( ) {
-    vga_print( "There was an interrupt! " );
+void load_tss( ) {
+    asm( "mov $0x18,%ax" );
+    asm( "ltr %ax" );
+}
 
-    /* have to use iret to return from an interrupt
-     * service routine */
-    asm ("hlt");
-    isr_return;
+ 
+void print_idt_descriptor( idt_descriptor_t* desc ) {
+    vga_print(" |");
+    vga_print(" off1=0x");
+    vga_printix( desc->off1 );
+    vga_print(" seg=0x");
+    vga_printix( desc->segment );
+    vga_print(" unused=0x");
+    vga_printix( desc->unused );
+    vga_print(" typ=0x");
+    vga_printix( desc->type_attr );
+    vga_print(" off2=0x");
+    vga_printix( desc->off2 );
+}
+
+void isr_main( ) {
+    asm("cli");
+    vga_print( "There was an interrupt!\n" );
 }

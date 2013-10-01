@@ -1,6 +1,10 @@
 #ifndef GDT_H_
 #define GDT_H_
 
+/*
+ * !!!! THIS IS CURRENTLY UNUSED !!!!
+ */
+
 const u8_t GDT_ACCESS_PRESENT = (1<<7);
 const u8_t GDT_ACCESS_EX      = (1<<3);
 const u8_t GDT_ACCESS_DC      = (1<<2);

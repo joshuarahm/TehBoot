@@ -2,15 +2,21 @@ CC?=gcc
 LD?=ld
 LD_SCRIPT=link_stage2.ld
 LD_FLAGS=-m elf_i386 -static -T$(LD_SCRIPT) -nostdlib
-C_FLAGS=-m32 -ffreestanding -Iinclude
+C_FLAGS=-g3 -ggdb -m32 -ffreestanding -Iinclude
 OBJCOPY=objcopy
-LIBOBJS=lib/vga.o lib/idt.o
+LIBOBJS=lib/vga.o lib/idt.o stage2_interrupts.o lib/isr.o
 
 lib/vga.o: lib/vga.c
 	$(CC) -olib/vga.o -c lib/vga.c $(C_FLAGS)
 
 lib/idt.o: lib/idt.c
 	$(CC) -olib/idt.o -c lib/idt.c $(C_FLAGS)
+
+stage2_interrupts.o: stage2_interrupts.s
+	$(CC) -m32 -ostage2_interrupts.o -c stage2_interrupts.s
+
+lib/isr.o: lib/isr.c
+	$(CC) -olib/isr.o -c lib/isr.c $(C_FLAGS)
 
 stage2.o: stage2_main.c
 	$(CC) -ostage2.o -c stage2_main.c $(C_FLAGS)

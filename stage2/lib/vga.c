@@ -60,7 +60,11 @@ void vga_newline( void ) {
 }
 
 void vga_putc( char c ) {
-	if( c == '\n' ) {
+    if( c == '\t' ){
+        uint_t next = (vga_col / 4 + 1) * 4;
+        while( vga_col < next )
+            vga_putc( ' ' );
+    } else if( c == '\n' ) {
 		vga_newline();
 	} else if ( c == '\r' ) {
 		vga_col = 0;
@@ -112,6 +116,33 @@ void vga_printid( sint_t i ) {
 		i /= 10;
 	}
 
+    -- ptr;
+	for( ; ptr >= 0; -- ptr ) {
+		vga_putc( buf[ptr] );
+	}
+}
+
+void vga_printix( uint_t i ) {
+    u8_t nyb;
+
+    if( i == 0 ) {
+        vga_putc( '0' );
+        return;
+    }
+
+	char buf[32];
+	sint_t ptr = 0;
+    while( i > 0 ) {
+        nyb = i & 0x0F;   
+        if( nyb < 10 ) {
+            buf[ptr++] = 0x30 + nyb;
+        } else {
+            buf[ptr++] = 0x61 + (nyb - 10);
+        }
+        i >>= 4;
+    }
+
+    -- ptr;
 	for( ; ptr >= 0; -- ptr ) {
 		vga_putc( buf[ptr] );
 	}
